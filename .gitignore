@@ -1,0 +1,18 @@
+# Node / monorepo
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Vite build
+client/dist/
+
+# Backend data & env
+server/data/
+server/.env
+.env
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
