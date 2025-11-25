@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { get, run } from "../lib/db.js";
-import { authenticate } from "../lib/auth.js";
+import { get, run } from "../db.js";
+import { authenticate } from "../auth.js";
 const router = Router();
 
 router.post("/login", async (req, res) => {

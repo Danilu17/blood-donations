@@ -1,7 +1,7 @@
 {
-  "name": "donaciones-frontend",
-  "private": true,
+  "name": "donar-app-client",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,13 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.7.2",
+    "axios": "^1.6.0",
+    "leaflet": "^1.9.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.26.1"
+    "react-router-dom": "^6.22.0"
   },
   "devDependencies": {
-    "vite": "^5.4.0",
-    "@vitejs/plugin-react": "^4.3.1"
+    "@vitejs/plugin-react": "^4.1.0",
+    "vite": "^5.0.0"
   }
 }

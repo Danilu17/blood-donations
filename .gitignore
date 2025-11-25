@@ -1,18 +1,24 @@
-# Node / monorepo
+# Node / Vite / React
 node_modules/
+dist/
+build/
+coverage/
+*.log
 npm-debug.log*
-yarn.lock
 pnpm-lock.yaml
-
-# Vite build
-client/dist/
-
-# Backend data & env
-server/data/
-server/.env
+yarn.lock
+# Env / claves
 .env
-
-# OS/IDE
+.env.*
+# Editor/OS
 .DS_Store
 Thumbs.db
 .vscode/
+.idea/
+# SQLite data
+server/data/*.sqlite
+server/data/*.db
+server/data/*.sqlite-journal
+# PDFs/exports generados
+*.pdf
+*.xlsx

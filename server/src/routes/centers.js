@@ -1,21 +1,33 @@
-import { Router } from "express";
-import { all, get, run } from "../lib/db.js";
-import { requireAuth } from "../lib/auth.js";
-const router = Router();
+// server/src/routes/centers.js
+import express from "express";
+import { db } from "../db.js";
+import { authRequired, requireRole } from "../middlewares.js";
+import { ok, fail } from "../utils.js";
 
-router.get("/", requireAuth(["ORG","ADMIN","DONOR"]), async (req, res) => {
-  const rows = await all(`SELECT * FROM centers ORDER BY name`);
-  res.json(rows);
-});
-router.post("/", requireAuth(["ADMIN"]), async (req, res) => {
-  const { name, address, hours } = req.body;
-  const id = (await run(`INSERT INTO centers(name,address,hours) VALUES(?,?,?)`, [name,address,hours])).lastID;
-  res.json({ id });
-});
-router.put("/:id", requireAuth(["ADMIN"]), async (req, res) => {
-  const { name, address, hours } = req.body;
-  await run(`UPDATE centers SET name=?,address=?,hours=? WHERE id=?`, [name,address,hours,req.params.id]);
-  res.json({ ok:true });
+export const centersRouter = express.Router();
+
+centersRouter.get("/", authRequired, (req, res) => {
+  db.all(`SELECT * FROM centers ORDER BY name`, [], (err, rows) => {
+    if (err) return fail(res, "DB error", 500);
+    ok(res, rows);
+  });
 });
 
-export default router;
+centersRouter.post("/", authRequired, requireRole("Admin"), (req, res) => {
+  const { name, address, hours, lat, lng, capacity } = req.body;
+  if (!name || !address || !hours) return fail(res, "Campos requeridos");
+  db.run(`INSERT INTO centers(name,address,hours,lat,lng,capacity) VALUES (?,?,?,?,?,?)`, [name, address, hours, lat, lng, capacity||50], function(err){
+    if (err) return fail(res, "DB error", 500);
+    ok(res, { id: this.lastID });
+  });
+});
+
+centersRouter.put("/:id", authRequired, requireRole("Admin"), (req, res) => {
+  const { name, address, hours, lat, lng, capacity } = req.body;
+  db.run(`UPDATE centers SET name=?, address=?, hours=?, lat=?, lng=?, capacity=? WHERE id=?`, [name, address, hours, lat, lng, capacity, req.params.id], (err)=>{
+    if (err) return fail(res, "DB error", 500);
+    ok(res, { updated: true });
+  });
+});
+
+export default centersRouter;
