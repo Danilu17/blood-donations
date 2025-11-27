@@ -24,7 +24,8 @@ import {
   OrgCommunications,
   OrgVolunteers
 } from "./pages/Organizer";
-import { AdminDashboard, AdminUsers, AdminCampaigns, AdminCenters, AdminReports } from "./pages/Admin";
+import { AdminDashboard, AdminUsers, AdminCampaigns, AdminCenters } from "./pages/Admin";
+import AdminReports from "./pages/AdminReports";
 import Beneficiary, { BeneficiaryPropose } from "./pages/Beneficiary";
 import "./styles.css";
 

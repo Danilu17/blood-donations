@@ -10,10 +10,12 @@ export function CampaignList() {
   const [items, setItems] = useState([]);
   const [date, setDate] = useState("");
   const [center, setCenter] = useState("");
+
   useEffect(() => {
     load();
     // eslint-disable-next-line
   }, []);
+
   const load = () =>
     api
       .get("/campaigns", { params: { date: date || undefined, center: center || undefined } })

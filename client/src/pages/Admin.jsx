@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Bell from "../components/Bell";
 import api from "../api";
 
+
 /* Gráfico sin dependencias externas */
 function SimpleBarChart({ labels, data, height = 220, max = null }) {
   const maxVal = max ?? Math.max(1, ...data);
