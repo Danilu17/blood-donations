@@ -1,47 +1,74 @@
-// client/src/components/Sidebar.jsx
+// client/src/components/Sidebar.jsx  (REEMPLAZA COMPLETO)
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 
+function NavItem({ to, label, active }) {
+  return <Link to={to} className={"nav-item " + (active ? "active" : "")}>{label}</Link>;
+}
+
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const loc = useLocation();
-  const r = user?.roles||[];
-  const item = (to, label) => <Link to={to} className={"nav-item " + (loc.pathname===to?"active":"")}>{label}</Link>;
+  const roles = user?.roles || [];
+
+  // Por qué: evitar menús mezclados y duplicados.
+  const rolePriority = ["Admin", "Organizer", "Beneficiary", "Donor"];
+  const primaryRole = rolePriority.find(r => roles.includes(r)) || "Donor";
+
+  let menu = [];
+  if (primaryRole === "Donor") {
+    menu = [
+      { to: "/dashboard", label: "Inicio" },
+      { to: "/campaigns", label: "Campañas" },
+      { to: "/my-enrollments", label: "Mis inscripciones" },
+      { to: "/health", label: "Salud" },
+      { to: "/donations", label: "Donaciones" },
+      { to: "/volunteer", label: "Voluntariado" },
+      { to: "/settings", label: "Configuraciones" },
+    ];
+  }
+  if (primaryRole === "Organizer") {
+    menu = [
+      { to: "/org", label: "Panel organizador" },
+      { to: "/org/campaigns", label: "Mis campañas" },
+      { to: "/org/communications", label: "Enviar comunicado" },
+      { to: "/org/volunteers", label: "Voluntarios" },
+      { to: "/settings", label: "Configuraciones" },
+      //{ to: "/campaigns", label: "Campañas" },
+    ];
+  }
+  if (primaryRole === "Beneficiary") {
+    menu = [
+      { to: "/benef", label: "Inicio" },           // incluye proponer campaña dentro
+       { to: "/benef/propose", label: "Proponer campaña" },
+      { to: "/settings", label: "Configuraciones" }
+    ];
+  }
+  if (primaryRole === "Admin") {
+    menu = [
+      { to: "/admin", label: "Inicio" },
+      //{ to: "/campaigns", label: "Campañas" },
+      { to: "/settings", label: "Configuraciones" },
+      { to: "/admin/users", label: "Usuarios" },
+      { to: "/admin/campaigns", label: "Campañas (admin)" },
+      { to: "/admin/centers", label: "Centros" },
+      { to: "/admin/reports", label: "Reportes" },
+    ];
+  }
+
   return (
     <aside className="sidebar">
-      <div className="row" style={{justifyContent:'space-between'}}>
-        <strong>Logo</strong>
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <strong>Donar App</strong>
         <span className="badge">{user?.name}</span>
       </div>
-      <div className="list" style={{marginTop:16}}>
-        {item("/", "Inicio")}
-        {r.includes("Donor") && <>
-          {item("/campaigns","Campañas")}
-          {item("/my-enrollments","Mis inscripciones")}
-          {item("/health","Salud")}
-          {item("/donations","Donaciones")}
-          {item("/volunteer","Voluntariado")}
-          {item("/settings","Configuraciones")}
-        </>}
-        {r.includes("Organizer") && <>
-          {item("/org","Panel organizador")}
-          {item("/org/campaigns","Mis campañas")}
-          {item("/org/communications","Enviar comunicado")}
-          {item("/org/volunteers","Voluntarios")}
-        </>}
-        {r.includes("Admin") && <>
-          {item("/admin","Panel admin")}
-          {item("/admin/users","Usuarios")}
-          {item("/admin/campaigns","Campañas")}
-          {item("/admin/centers","Centros de donación")}
-          {item("/admin/reports","Reportes")}
-        </>}
-        {r.includes("Beneficiary") && <>
-          {item("/benef","Beneficiario")}
-        </>}
+      <div className="list" style={{ marginTop: 16 }}>
+        {menu.map(i => (
+          <NavItem key={i.to} to={i.to} label={i.label} active={loc.pathname === i.to} />
+        ))}
       </div>
-      <button className="ghost" style={{marginTop:16}} onClick={logout}>Cerrar sesión</button>
+      <button className="ghost" style={{ marginTop: 16 }} onClick={logout}>Cerrar sesión</button>
     </aside>
   );
 }
