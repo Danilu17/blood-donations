@@ -1,32 +1,23 @@
-// client/src/pages/Campaigns.jsx
+// client/src/pages/Campaigns.jsx  (REEMPLAZA COMPLETO)
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Bell from "../components/Bell";
 import api from "../api";
+import { useAuth } from "../AuthContext";
 
 export function CampaignList() {
   const [items, setItems] = useState([]);
-  const [centers, setCenters] = useState([]);
-  const [filters, setFilters] = useState({ date: "", center: "" });
-  const load = async () => {
-    const q = [];
-    if (filters.date) q.push(`date=${filters.date}`);
-    if (filters.center) q.push(`center=${filters.center}`);
-    const url = "/campaigns" + (q.length ? `?${q.join("&")}` : "");
-    const [camps, cents] = await Promise.all([api.get(url), api.get("/centers")]);
-    setItems(camps.data.data);
-    setCenters(cents.data.data);
-  };
+  const [date, setDate] = useState("");
+  const [center, setCenter] = useState("");
   useEffect(() => {
     load();
     // eslint-disable-next-line
   }, []);
-
-  const apply = e => {
-    e.preventDefault();
-    load();
-  };
+  const load = () =>
+    api
+      .get("/campaigns", { params: { date: date || undefined, center: center || undefined } })
+      .then((r) => setItems(r.data.data));
 
   return (
     <>
@@ -37,35 +28,31 @@ export function CampaignList() {
           <Bell />
         </div>
 
-        <form onSubmit={apply} className="row card" style={{ gap: 8, marginBottom: 12 }}>
-          <input type="date" value={filters.date} onChange={e => setFilters({ ...filters, date: e.target.value })} />
-          <select value={filters.center} onChange={e => setFilters({ ...filters, center: e.target.value })}>
-            <option value="">Todos los centros</option>
-            {centers.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <button className="ghost" type="submit">
-            Filtrar
-          </button>
-        </form>
+        <div className="card list">
+          <div className="row">
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input placeholder="Todos los centros" value={center} onChange={(e) => setCenter(e.target.value)} />
+            <button className="ghost" onClick={load}>Filtrar</button>
+          </div>
+        </div>
 
-        <div className="list">
-          {items.map(c => (
-            <div key={c.id} className="card row" style={{ justifyContent: "space-between" }}>
-              <div>
-                <strong>{c.name}</strong>
-                <div className="muted">
-                  {c.center_name} — {c.date} {c.start_time}-{c.end_time}
+        <div className="grid">
+          {items.map((c) => (
+            <a key={c.id} href={`/campaigns/${c.id}`} className="card hover">
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <div>
+                  <div className="title-sm">{c.name}</div>
+                  <div className="muted">{c.place || c.center_name} — {c.date} {c.start_time}-{c.end_time}</div>
+                  <div className="row" style={{ marginTop: 6 }}>
+                    <span className="chip">Cupos: {c.capacity}</span>
+                    <span className="chip">Requiere: {c.blood_group}{c.rh_factor === "Rh-" ? "-" : "+"}</span>
+                  </div>
                 </div>
+                <span className="badge">Ver más</span>
               </div>
-              <Link className="badge" to={`/campaigns/${c.id}`}>
-                Ver más
-              </Link>
-            </div>
+            </a>
           ))}
+          {items.length === 0 && <div className="badge">No hay campañas.</div>}
         </div>
       </main>
     </>
@@ -74,25 +61,47 @@ export function CampaignList() {
 
 export function CampaignDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const roles = user?.roles || [];
+  const isOrganizer = roles.includes("Organizer");
   const [c, setC] = useState(null);
-  const [status, setStatus] = useState("");
-  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    api.get(`/campaigns/${id}`).then(r => setC(r.data.data));
+    api.get(`/campaigns/${id}`).then((r) => {
+      setC(r.data.data || r.data);
+      setLoading(false);
+    });
   }, [id]);
 
   const enroll = async () => {
-    setErr("");
+    setMsg("");
     try {
-      const { data } = await api.post(`/enroll/${id}`);
-      setStatus(data.data.status);
+      await api.post(`/enrollments`, { campaign_id: Number(id) });
+      setMsg("Inscripción confirmada.");
     } catch (e) {
-      setErr(e.userMessage || "Error");
+      setMsg(e.response?.data?.error || "Error al inscribirse");
     }
   };
 
-  if (!c) return <div>Cargando...</div>;
+  if (loading) {
+    return (
+      <>
+        <Sidebar />
+        <main className="main"><div className="card">Cargando…</div></main>
+      </>
+    );
+  }
+  if (!c) {
+    return (
+      <>
+        <Sidebar />
+        <main className="main"><div className="card">No encontrada.</div></main>
+      </>
+    );
+  }
+
   return (
     <>
       <Sidebar />
@@ -101,20 +110,33 @@ export function CampaignDetail() {
           <h2>Detalle de campaña</h2>
           <Bell />
         </div>
-        <div className="card">
-          <h3>{c.name}</h3>
-          <div>
-            {c.center_name} — {c.center_address}
+
+        <div className="card hero">
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <h3 className="hero-title">{c.name}</h3>
+              <div className="meta">
+                <div><span className="meta-key">Lugar</span><span className="meta-val">{c.place || `${c.center_name} — ${c.center_address || ""}`}</span></div>
+                <div><span className="meta-key">Fecha y horario</span><span className="meta-val">{c.date} {c.start_time}–{c.end_time}</span></div>
+                <div><span className="meta-key">Requisitos</span><span className="meta-val">{c.blood_group}{c.rh_factor === "Rh-" ? "-" : "+"}</span></div>
+              </div>
+              <div className="row" style={{ marginTop: 10 }}>
+                <span className="chip chip-soft">Cupos: {c.capacity}</span>
+                {c.status !== "active" && <span className="chip warn">Estado: {c.status}</span>}
+              </div>
+            </div>
           </div>
-          <div>
-            {c.date} {c.start_time}-{c.end_time}
-          </div>
-          <div className="badge">Cupos: {c.capacity}</div>
-          <button onClick={enroll}>Inscribirme</button>
-          {status && <div className="badge">Resultado: {status}</div>}
-          {err && <div style={{ color: "crimson" }}>{err}</div>}
+
+          {!isOrganizer && c.status === "active" && (
+            <div style={{ marginTop: 18 }}>
+              <button onClick={enroll}>Inscribirme</button>
+            </div>
+          )}
+          {msg && <div className="toast-inline">{msg}</div>}
         </div>
       </main>
     </>
   );
 }
+
+export default CampaignList;

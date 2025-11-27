@@ -1,30 +1,57 @@
-/* client/src/styles.css */
-:root{ --bg:#f7f7f8; --card:#fff; --text:#222; --muted:#666; --accent:#e11d48; }
+/* client/src/styles.css  (REEMPLAZA COMPLETO: mejora detalle de campaña y UI) */
+:root{
+  --bg:#f7f7f8; --card:#fff; --text:#222; --muted:#666; --accent:#e11d48;
+  --border:#e5e7eb; --soft:#f3f4f6;
+}
 *{ box-sizing:border-box; }
 body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; background:var(--bg); color:var(--text);}
 a{ color:inherit; text-decoration:none;}
-input,select,button,textarea{ font:inherit; padding:8px 10px; border:1px solid #ddd; border-radius:8px; width:100%; }
-button{ background:var(--accent); color:#fff; border:none; cursor:pointer; }
+input,select,button,textarea{ font:inherit; padding:10px 12px; border:1px solid var(--border); border-radius:10px; width:100%; background:#fff; }
+textarea{ min-height:90px; }
+button{ background:var(--accent); color:#fff; border:none; cursor:pointer; padding:10px 14px; border-radius:10px; }
 button[disabled]{ opacity:.6; cursor:not-allowed;}
 button.ghost{ background:#eee; color:#333; }
 .container{ max-width:1100px; margin:0 auto; padding:24px; }
 .card{ background:var(--card); border-radius:16px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.card.hover{ transition:transform .06s ease, box-shadow .12s ease; }
+.card.hover:hover{ transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,.06); }
 .grid{ display:grid; gap:16px; }
 .grid2{ grid-template-columns:1fr 1fr; }
-.sidebar{ width:260px; background:#fff; padding:16px; border-right:1px solid #eee; position:fixed; top:0; bottom:0; overflow:auto; }
+.sidebar{ width:260px; background:#fff; padding:16px; border-right:1px solid var(--border); position:fixed; top:0; bottom:0; overflow:auto; }
 .main{ margin-left:260px; padding:24px; }
-.row{ display:flex; align-items:center; gap:12px; }
+.row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .nav-item{ padding:10px 12px; border-radius:8px; }
 .nav-item.active{ background:#fee2e2; color:#991b1b; }
 .header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .badge{ padding:6px 10px; border-radius:999px; font-size:12px; background:#e5e7eb; display:inline-block; }
+.badge.warn{ background:#fee2e2; color:#991b1b; }
 .kpi{ font-size:28px; font-weight:700; }
 .bell{ position:relative; cursor:pointer; }
-.dropdown{ position:absolute; right:0; top:32px; width:320px; background:#fff; border:1px solid #eee; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.1); max-height:420px; overflow:auto; }
+.dropdown{ position:absolute; right:0; top:32px; width:320px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.1); max-height:420px; overflow:auto; }
 .list{ display:flex; flex-direction:column; gap:10px; }
 .table{ width:100%; border-collapse:collapse; }
-.table th,.table td{ border-bottom:1px solid #eee; text-align:left; padding:8px; }
+.table th,.table td{ border-bottom:1px solid var(--border); text-align:left; padding:8px; }
 .status-ok{ background:#dcfce7; }
 .status-wait{ background:#fef9c3; }
 .leaflet-container{ height:320px; border-radius:12px; }
 .toast{ position:fixed; right:16px; bottom:16px; background:#111; color:#fff; padding:12px 14px; border-radius:10px;}
+.toast-inline{ margin-top:10px; background:#111; color:#fff; padding:8px 10px; border-radius:8px; display:inline-block; }
+
+/* Extras */
+.title-sm{ font-weight:600; font-size:16px; }
+.muted{ color:var(--muted); }
+.chip{ background:var(--soft); border:1px solid var(--border); padding:6px 10px; border-radius:999px; font-size:12px; }
+.chip-soft{ background:#eef2ff; border-color:#e0e7ff; }
+.chip.warn{ background:#fff7ed; border-color:#ffedd5; }
+
+/* Detalle */
+.hero{ padding:22px; }
+.hero-title{ margin:0 0 6px 0; font-size:22px; }
+.meta{ display:grid; gap:8px; margin-top:6px; }
+.meta-key{ display:inline-block; width:150px; color:#6b7280; font-size:14px; }
+.meta-val{ font-weight:500; }
+
+/* Lista de campañas del organizador */
+.item-row{ justify-content:space-between; align-items:flex-start; border:1px solid var(--border); padding:12px; border-radius:12px; background:#fff; }
+.item-main{ min-width:260px; }
+.item-actions{ gap:8px; }

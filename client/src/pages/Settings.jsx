@@ -41,65 +41,155 @@ export default function Settings() {
           <h2>Configuraciones</h2>
           <Bell />
         </div>
+        
         <div className="grid grid2">
           <div className="card">
             <h3>Notificaciones</h3>
-            <div className="list">
-              <label className="row">
-                <input type="checkbox" checked={notif.enabled} onChange={e => setNotif({ ...notif, enabled: e.target.checked })} /> Activadas
-              </label>
-              
-              <label>
-                Frecuencia
-                <select value={notif.frecuencia} onChange={e => setNotif({ ...notif, frecuencia: e.target.value })}>
+
+            <div className="list" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+
+              {/* Estado activado/desactivado */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontWeight: 600 }}>Estado</label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc",
+                    background: "#fafafa"
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={notif.enabled}
+                    onChange={e => setNotif({ ...notif, enabled: e.target.checked })}
+                  />
+                  {notif.enabled ? "Activadas" : "Desactivadas"}
+                </label>
+              </div>
+
+              {/* Frecuencia */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontWeight: 600 }}>Frecuencia</label>
+                <select
+                  value={notif.frecuencia}
+                  onChange={e => setNotif({ ...notif, frecuencia: e.target.value })}
+                  style={{
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc"
+                  }}
+                >
                   <option>Diaria</option>
                   <option>Semanal</option>
                   <option>Mensual</option>
                 </select>
-              </label>
-              <label className="row">
-                <input
-                  type="checkbox"
-                  checked={notif.recordatorios}
-                  onChange={e => setNotif({ ...notif, recordatorios: e.target.checked })}
-                />
-                Recordatorios de campañas
-              </label>
-              <label className="row">
-                <input type="checkbox" checked={notif.alertas} onChange={e => setNotif({ ...notif, alertas: e.target.checked })} />
-                Alertas urgentes
-              </label>
-              <label className="row">
-                <input
-                  type="checkbox"
-                  checked={notif.confirmaciones}
-                  onChange={e => setNotif({ ...notif, confirmaciones: e.target.checked })}
-                />
-                Confirmaciones
-              </label>
-              <label className="row">
-                <input
-                  type="checkbox"
-                  checked={notif.comunicados}
-                  onChange={e => setNotif({ ...notif, comunicados: e.target.checked })}
-                />
-                Comunicados
-              </label>
+              </div>
+
+              {/* Lista de notificaciones */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+
+                {[
+                  { key: "recordatorios", label: "Recordatorios de campañas" },
+                  { key: "alertas", label: "Alertas urgentes" },
+                  { key: "confirmaciones", label: "Confirmaciones" },
+                  { key: "comunicados", label: "Comunicados" }
+                ].map(opt => (
+                  <label
+                    key={opt.key}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 40px",
+                      alignItems: "center",
+                      padding: "8px 10px",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "6px",
+                      background: "#fafafa"
+                    }}
+                  >
+                    <span>{opt.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={notif[opt.key]}
+                      onChange={e => setNotif({ ...notif, [opt.key]: e.target.checked })}
+                      style={{ margin: "0 auto" }}
+                    />
+                  </label>
+                ))}
+
+              </div>
+
             </div>
           </div>
+
+          {/* =========================
+              SOLICITAR CAMBIO DE ROL
+              ========================= */}
           <div className="card">
             <h3>Solicitar cambio de rol</h3>
-            <div className="row">
-              <select value={role} onChange={e => setRole(e.target.value)}>
-                <option>Organizer</option>
-                <option>Beneficiary</option>
-                <option>Donor</option>
-              </select>
-              <button onClick={sendRole}>Solicitar</button>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+
+              {/* Select */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontWeight: 600 }}>Nuevo rol</label>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  style={{
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ccc"
+                  }}
+                >
+                  <option>Organizador</option>
+                  <option>Beneficiario</option>
+                  <option>Donador</option>
+                </select>
+              </div>
+
+              {/* Botón */}
+              <button
+                onClick={sendRole}
+                style={{
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "#d62839",
+                  color: "#fff",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Solicitar
+              </button>
+
+              {msg && (<div
+                  style={{
+                    marginTop: "4px",
+                    padding: "10px 12px",
+                    borderRadius: "6px",
+                    background: "#e6ffed",
+                    border: "1px solid rgba(52, 199, 89, 0.5)",
+                    color: "#135d2a",
+                    fontSize: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={{ fontSize: "18px" }}></span>
+                  <span>{msg}</span>
+                </div>
+              )}
+
             </div>
-            {msg && <div className="badge">{msg}</div>}
           </div>
         </div>
+        
       </main>
     </>
   );

@@ -1,4 +1,4 @@
-// client/src/components/Sidebar.jsx  (REEMPLAZA COMPLETO)
+// client/src/components/Sidebar.jsx  (ACTUALIZA MENÚ DE ORGANIZADOR: agrega "Crear campaña")
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -11,13 +11,20 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const loc = useLocation();
   const roles = user?.roles || [];
-
-  // Por qué: evitar menús mezclados y duplicados.
   const rolePriority = ["Admin", "Organizer", "Beneficiary", "Donor"];
   const primaryRole = rolePriority.find(r => roles.includes(r)) || "Donor";
 
   let menu = [];
-  if (primaryRole === "Donor") {
+  if (primaryRole === "Organizer") {
+    menu = [
+      { to: "/org", label: "Panel organizador" },
+      { to: "/org/campaigns", label: "Mis campañas" },
+      { to: "/org/campaigns/new", label: "Crear campaña" },  // nuevo
+      { to: "/org/communications", label: "Enviar comunicado" },
+      { to: "/org/volunteers", label: "Voluntarios" },
+      { to: "/settings", label: "Configuraciones" },
+    ];
+  } else if (primaryRole === "Donor") {
     menu = [
       { to: "/dashboard", label: "Inicio" },
       { to: "/campaigns", label: "Campañas" },
@@ -27,28 +34,15 @@ export default function Sidebar() {
       { to: "/volunteer", label: "Voluntariado" },
       { to: "/settings", label: "Configuraciones" },
     ];
-  }
-  if (primaryRole === "Organizer") {
+  } else if (primaryRole === "Beneficiary") {
     menu = [
-      { to: "/org", label: "Panel organizador" },
-      { to: "/org/campaigns", label: "Mis campañas" },
-      { to: "/org/communications", label: "Enviar comunicado" },
-      { to: "/org/volunteers", label: "Voluntarios" },
+      { to: "/benef", label: "Inicio" },
+      { to: "/benef/propose", label: "Proponer campaña" },
       { to: "/settings", label: "Configuraciones" },
-      //{ to: "/campaigns", label: "Campañas" },
     ];
-  }
-  if (primaryRole === "Beneficiary") {
-    menu = [
-      { to: "/benef", label: "Inicio" },           // incluye proponer campaña dentro
-       { to: "/benef/propose", label: "Proponer campaña" },
-      { to: "/settings", label: "Configuraciones" }
-    ];
-  }
-  if (primaryRole === "Admin") {
+  } else if (primaryRole === "Admin") {
     menu = [
       { to: "/admin", label: "Inicio" },
-      //{ to: "/campaigns", label: "Campañas" },
       { to: "/settings", label: "Configuraciones" },
       { to: "/admin/users", label: "Usuarios" },
       { to: "/admin/campaigns", label: "Campañas (admin)" },
@@ -60,7 +54,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <strong>Donar App</strong>
+        <strong>DonaHoy</strong>
         <span className="badge">{user?.name}</span>
       </div>
       <div className="list" style={{ marginTop: 16 }}>
