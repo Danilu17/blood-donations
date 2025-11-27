@@ -123,7 +123,7 @@ campaignsRouter.put("/:id", authRequired, requireRole("Organizer"), (req, res) =
       const {
         name        = old.name,
         place       = old.place,
-        center_id   = old.center_id,      // seguimos permitiendo cambiar centro aunque no esté en el form
+        center_id   = old.center_id,
         date        = old.date,
         start_time  = old.start_time,
         end_time    = old.end_time,
