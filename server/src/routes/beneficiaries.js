@@ -23,6 +23,23 @@ beneficiaryRouter.get("/requests/mine", authRequired, requireRole("Beneficiary")
   });
 });
 
+// Campañas vinculadas a una solicitud (se toma la pertenencia del beneficiario)
+beneficiaryRouter.get("/linked-campaigns/:requestId", authRequired, requireRole("Beneficiary"), (req, res) => {
+  const requestId = req.params.requestId;
+  db.get(`SELECT * FROM beneficiary_requests WHERE id=? AND user_id=?`, [requestId, req.user.id], (err, br) => {
+    if (err || !br) return fail(res, "Solicitud no encontrada", 404);
+    db.all(
+      `SELECT c.*, cp.id AS proposal_id, cp.status AS proposal_status
+         FROM campaign_proposals cp
+         JOIN campaigns c ON c.id = cp.linked_campaign_id
+        WHERE cp.beneficiary_id = ? AND cp.linked_campaign_id IS NOT NULL
+        ORDER BY c.date DESC`,
+      [req.user.id],
+      (e2, rows) => (e2 ? fail(res, "DB error", 500) : ok(res, rows))
+    );
+  });
+});
+
 // Link candidates donors for a request (Organizer)
 beneficiaryRouter.post("/assign", authRequired, requireRole("Organizer"), (req, res) => {
   const { request_id, donor_ids=[] } = req.body;

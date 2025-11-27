@@ -30,6 +30,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/health", healthRouter);
 app.use("/api/campaigns", campaignsRouter);
 app.use("/api/enroll", enrollRouter);
+// …y agrego el alias que está usando el front:
+app.use("/api/enrollments", enrollRouter);
 app.use("/api/donations", donationsRouter);
 app.use("/api/notifications", notifRouter);   // <<<<<< AQUI ESTA MONTADA
 app.use("/api/centers", centersRouter);

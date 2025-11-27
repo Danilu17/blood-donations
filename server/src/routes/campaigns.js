@@ -14,7 +14,7 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
 campaignsRouter.get("/", authRequired, (req, res) => {
   const { date, center } = req.query;
   let q = `
-    SELECT c.*,
+    SELECT c.*, 
            centers.name  AS center_name,
            centers.address AS center_address
     FROM campaigns c
@@ -29,6 +29,22 @@ campaignsRouter.get("/", authRequired, (req, res) => {
     if (err) return fail(res, "DB error", 500);
     ok(res, rows);
   });
+});
+
+// History (Admin: incluye todas las campañas y su cantidad de inscriptos)
+campaignsRouter.get("/history", authRequired, requireRole("Admin"), (req, res) => {
+  db.all(
+    `SELECT c.*, centers.name AS center_name, centers.address AS center_address,
+            (SELECT COUNT(1) FROM enrollments e WHERE e.campaign_id = c.id) AS enrollment_count
+       FROM campaigns c
+       JOIN centers ON centers.id = c.center_id
+       ORDER BY c.created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) return fail(res, "DB error", 500);
+      ok(res, rows);
+    }
+  );
 });
 
 // CREATE
@@ -68,6 +84,17 @@ campaignsRouter.post("/", authRequired, requireRole("Organizer"), (req, res) => 
 });
 
 // DETAIL
+campaignsRouter.get("/:id/enrollments", authRequired, requireRole("Admin"), (req, res) => {
+  db.all(
+    `SELECT u.id, u.name, u.surname, u.email, u.phone, e.status, e.created_at
+       FROM enrollments e JOIN users u ON u.id = e.user_id
+      WHERE e.campaign_id = ?
+      ORDER BY e.created_at DESC`,
+    [req.params.id],
+    (err, rows) => (err ? fail(res, "DB error", 500) : ok(res, rows))
+  );
+});
+
 campaignsRouter.get("/:id", authRequired, (req, res) => {
   db.get(
     `SELECT c.*, centers.name AS center_name, centers.address AS center_address

@@ -1,4 +1,3 @@
-// server/src/routes/enrollments.js
 import express from "express";
 import { db } from "../db.js";
 import { authRequired } from "../middlewares.js";
@@ -15,9 +14,7 @@ function checkEligibility(userId, cb) {
   });
 }
 
-enrollRouter.post("/:campaignId", authRequired, (req, res) => {
-  const userId = req.user.id;
-  const campaignId = req.params.campaignId;
+function enrollUserToCampaign(campaignId, userId, res) {
   db.get(`SELECT * FROM campaigns WHERE id=? AND status='active'`, [campaignId], (err, camp) => {
     if (err || !camp) return fail(res, "Campaña no disponible", 404);
     checkEligibility(userId, (msg, hf) => {
@@ -39,6 +36,18 @@ enrollRouter.post("/:campaignId", authRequired, (req, res) => {
       });
     });
   });
+}
+
+// Inscribir desde ruta RESTful original
+enrollRouter.post("/:campaignId", authRequired, (req, res) => {
+  enrollUserToCampaign(req.params.campaignId, req.user.id, res);
+});
+
+// Inscribir permitiendo body { campaign_id } (compatibilidad con UI)
+enrollRouter.post("/", authRequired, (req, res) => {
+  const { campaign_id } = req.body || {};
+  if (!campaign_id) return fail(res, "Falta campaign_id", 400);
+  enrollUserToCampaign(campaign_id, req.user.id, res);
 });
 
 enrollRouter.delete("/:campaignId", authRequired, (req, res) => {
@@ -49,7 +58,10 @@ enrollRouter.delete("/:campaignId", authRequired, (req, res) => {
 });
 
 enrollRouter.get("/my", authRequired, (req, res) => {
-  db.all(`SELECT e.*, c.name, c.date, c.start_time, c.end_time, c.center_id FROM enrollments e JOIN campaigns c ON c.id=e.campaign_id WHERE e.user_id=? ORDER BY c.date DESC`, [req.user.id], (err, rows) => {
+  db.all(`SELECT e.*, c.name, c.date, c.start_time, c.end_time, c.center_id, c.status as campaign_status
+          FROM enrollments e JOIN campaigns c ON c.id=e.campaign_id
+          WHERE e.user_id=?
+          ORDER BY c.date DESC`, [req.user.id], (err, rows) => {
     if (err) return fail(res, "DB error", 500);
     ok(res, rows);
   });
