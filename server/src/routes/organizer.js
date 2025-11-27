@@ -6,7 +6,34 @@ import { ok, fail } from "../utils.js";
 
 const notifRouter = express.Router();
 
-/* Helper: obtener roles del usuario (por si el middleware no los inyecta) */
+/* Bootstrap idempotente: por si tu DB no tiene tablas */
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS roles(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS user_roles(
+    user_id INTEGER NOT NULL,
+    role_id INTEGER NOT NULL,
+    UNIQUE(user_id, role_id)
+  )`);
+  const seed = db.prepare(`INSERT OR IGNORE INTO roles(name) VALUES (?), (?), (?), (?)`);
+  seed.run(["Donor","Organizer","Beneficiary","Admin"]);
+  seed.finalize();
+
+  db.run(`CREATE TABLE IF NOT EXISTS notifications(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    campaign_id INTEGER,
+    read INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    sender_id INTEGER
+  )`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, read, created_at DESC)`);
+});
+
 function getUserRoles(userId) {
   return new Promise((resolve, reject) => {
     db.all(
@@ -15,17 +42,17 @@ function getUserRoles(userId) {
          JOIN user_roles ur ON ur.role_id = r.id
         WHERE ur.user_id = ?`,
       [userId],
-      (err, rows) => (err ? reject(err) : resolve(rows.map((x) => x.name)))
+      (err, rows) => (err ? reject(err) : resolve(rows.map(x => x.name)))
     );
   });
 }
 
-/* --- Campanita: últimas 50 --- */
+/* Campanita */
 notifRouter.get("/", authRequired, (req, res) => {
   db.all(
-    `SELECT id, title, body, campaign_id, read, created_at
+    `SELECT id, subject, message, campaign_id, read, created_at
        FROM notifications
-      WHERE user_id = ?
+      WHERE user_id=?
       ORDER BY created_at DESC
       LIMIT 50`,
     [req.user.id],
@@ -33,19 +60,14 @@ notifRouter.get("/", authRequired, (req, res) => {
   );
 });
 
-/* --- Marcar como leídas --- */
+/* Marcar leídas */
 notifRouter.post("/read", authRequired, (req, res) => {
-  db.run(
-    `UPDATE notifications SET read=1 WHERE user_id=?`,
-    [req.user.id],
-    (err) => (err ? fail(res, "DB error", 500) : ok(res, { read: true }))
+  db.run(`UPDATE notifications SET read=1 WHERE user_id=?`, [req.user.id], (err) =>
+    err ? fail(res, "DB error", 500) : ok(res, { read: true })
   );
 });
 
-/* --- Broadcast por rol (Organizer/Admin) ---
-   BODY: { audience: 'donors'|'beneficiaries'|'organizers'|'admins',
-           subject, message, campaign_id? }
-------------------------------------------------*/
+/* Broadcast por rol (Organizer/Admin) */
 notifRouter.post("/broadcast", authRequired, async (req, res) => {
   try {
     const roles = req.user.roles || (await getUserRoles(req.user.id));
@@ -55,12 +77,7 @@ notifRouter.post("/broadcast", authRequired, async (req, res) => {
     const { audience, subject, message, campaign_id } = req.body || {};
     if (!subject || !message) return fail(res, "Faltan asunto/mensaje", 400);
 
-    const map = {
-      donors: "Donor",
-      beneficiaries: "Beneficiary",
-      organizers: "Organizer",
-      admins: "Admin",
-    };
+    const map = { admins: "Admin", organizers: "Organizer", donors: "Donor", beneficiaries: "Beneficiary" };
     const roleName = map[audience];
     if (!roleName) return fail(res, "Audiencia inválida", 400);
 
@@ -77,21 +94,11 @@ notifRouter.post("/broadcast", authRequired, async (req, res) => {
 
         db.serialize(() => {
           const stmt = db.prepare(
-            `INSERT INTO notifications (user_id, title, body, campaign_id, read, sender_id)
+            `INSERT INTO notifications (user_id, subject, message, campaign_id, read, sender_id)
              VALUES (?,?,?,?,0,?)`
           );
-          for (const r of rows) {
-            stmt.run([
-              r.user_id,
-              subject,
-              message,
-              campaign_id ?? null,
-              req.user.id,
-            ]);
-          }
-          stmt.finalize((finalErr) =>
-            finalErr ? fail(res, "DB error", 500) : ok(res, { count: rows.length })
-          );
+          for (const r of rows) stmt.run([r.user_id, subject, message, campaign_id ?? null, req.user.id]);
+          stmt.finalize((finalErr) => finalErr ? fail(res, "DB error", 500) : ok(res, { count: rows.length }));
         });
       }
     );

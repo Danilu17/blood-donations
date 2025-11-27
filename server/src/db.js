@@ -1,4 +1,4 @@
-// server/src/db.js
+// server/src/db.js  (REEMPLAZA COMPLETO)
 import sqlite3 from "sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -12,7 +12,7 @@ export const db = new sqlite3.Database(dbPath);
 
 export function initDb() {
   db.serialize(() => {
-    // Users & Roles
+    // ===== Users & Roles =====
     db.run(`CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -49,22 +49,22 @@ export function initDb() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );`);
 
-    // Health questionnaire
+    // ===== Health questionnaire =====
     db.run(`CREATE TABLE IF NOT EXISTS health_forms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       weight REAL NOT NULL,
-      diseases TEXT NOT NULL, -- csv
+      diseases TEXT NOT NULL,
       medications TEXT NOT NULL,
       last_donation_date TEXT NOT NULL,
       blood_group TEXT NOT NULL CHECK (blood_group IN ('A','B','AB','O')),
       rh_factor TEXT NOT NULL CHECK (rh_factor IN ('Rh+','Rh-')),
-      status TEXT NOT NULL, -- 'Apto','No apto','Requiere revision'
+      status TEXT NOT NULL,
       created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );`);
 
-    // Centers & Campaigns
+    // ===== Centers =====
     db.run(`CREATE TABLE IF NOT EXISTS centers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -74,36 +74,43 @@ export function initDb() {
       lng REAL,
       capacity INTEGER NOT NULL DEFAULT 50
     );`);
+
+    // ===== Campaigns =====
     db.run(`CREATE TABLE IF NOT EXISTS campaigns (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      place TEXT NOT NULL,                             -- CU9: lugar
       center_id INTEGER NOT NULL,
-      date TEXT NOT NULL, -- YYYY-MM-DD
-      start_time TEXT NOT NULL, -- HH:mm
-      end_time TEXT NOT NULL,   -- HH:mm
-      requirements TEXT, -- JSON: {min_age, requested_groups, notes}
+      date TEXT NOT NULL,                              -- YYYY-MM-DD
+      start_time TEXT NOT NULL,                        -- HH:mm
+      end_time TEXT NOT NULL,                          -- HH:mm
+      blood_group TEXT NOT NULL CHECK (blood_group IN ('A','B','AB','O')), -- CU9: tipo requerido
+      rh_factor TEXT NOT NULL CHECK (rh_factor IN ('Rh+','Rh-')),
+      notes TEXT,                                      -- CU9: requisitos/notas
       capacity INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'active', -- active|finalized|cancelled
+      status TEXT NOT NULL DEFAULT 'active',           -- active|finalized|cancelled
       organizer_id INTEGER NOT NULL,
       created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       FOREIGN KEY (center_id) REFERENCES centers(id),
       FOREIGN KEY (organizer_id) REFERENCES users(id)
     );`);
+
+    // Versionado de campañas (auditoría)
     db.run(`CREATE TABLE IF NOT EXISTS campaign_versions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id INTEGER NOT NULL,
       version INTEGER NOT NULL,
-      data TEXT NOT NULL,
+      data TEXT NOT NULL,                              -- JSON snapshot
       created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
     );`);
 
-    // Enrollments & Donations
+    // ===== Enrollments & Donations =====
     db.run(`CREATE TABLE IF NOT EXISTS enrollments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       campaign_id INTEGER NOT NULL,
       user_id INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'confirmed', -- confirmed|waitlist
+      status TEXT NOT NULL DEFAULT 'confirmed',        -- confirmed|waitlist
       created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       UNIQUE(campaign_id, user_id),
       FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -115,32 +122,36 @@ export function initDb() {
       campaign_id INTEGER NOT NULL,
       date TEXT NOT NULL,
       center_id INTEGER NOT NULL,
-      blood_type TEXT NOT NULL,  -- e.g., O+, A-
+      blood_type TEXT NOT NULL,                        -- p.ej. O+, A-
       volume_ml INTEGER NOT NULL,
       notes TEXT,
-      status TEXT NOT NULL DEFAULT 'successful', -- successful|failed
+      status TEXT NOT NULL DEFAULT 'successful',       -- successful|failed
       created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (campaign_id) REFERENCES campaigns(id),
       FOREIGN KEY (center_id) REFERENCES centers(id)
     );`);
 
-    // Notifications
+    // ===== Notifications =====
     db.run(`CREATE TABLE IF NOT EXISTS notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       title TEXT NOT NULL,
       body TEXT NOT NULL,
+      campaign_id INTEGER,
       read INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      sender_id INTEGER,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read, created_at);`);
 
-    // Volunteers
+
+    // ===== Volunteers =====
     db.run(`CREATE TABLE IF NOT EXISTS volunteer_availability (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
-      days TEXT NOT NULL, -- csv, e.g. "Mon,Wed"
+      days TEXT NOT NULL,        -- "Mon,Wed"
       from_time TEXT NOT NULL,
       to_time TEXT NOT NULL,
       task TEXT,
@@ -149,7 +160,7 @@ export function initDb() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );`);
 
-    // Role management
+    // ===== Role management =====
     db.run(`CREATE TABLE IF NOT EXISTS role_change_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -162,7 +173,7 @@ export function initDb() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );`);
 
-    // Beneficiary
+    // ===== Beneficiary =====
     db.run(`CREATE TABLE IF NOT EXISTS beneficiary_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -170,7 +181,7 @@ export function initDb() {
       rh_factor TEXT NOT NULL,
       units INTEGER NOT NULL,
       center_id INTEGER NOT NULL,
-      urgency TEXT NOT NULL, -- 'normal'|'urgent'|'critical'
+      urgency TEXT NOT NULL,        -- normal|urgent|critical
       estimated_date TEXT NOT NULL, -- YYYY-MM-DD
       status TEXT NOT NULL DEFAULT 'pending', -- pending|in_campaign|closed|rejected
       reason TEXT,
@@ -194,9 +205,112 @@ export function initDb() {
       FOREIGN KEY (linked_campaign_id) REFERENCES campaigns(id)
     );`);
 
-    // Indexes for perf
+    // ===== Indexes =====
     db.run(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_campaigns_center_date ON campaigns(center_id, date, start_time, end_time);`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_enrollments_campaign ON enrollments(campaign_id);`);
+
+    // ===== Triggers: Reglas de negocio =====
+
+    // 1) Evitar superposición de campañas en mismo centro/fecha/horario (INSERT)
+    db.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_campaigns_no_overlap_ins
+      BEFORE INSERT ON campaigns
+      FOR EACH ROW
+      BEGIN
+        SELECT CASE
+          WHEN EXISTS (
+            SELECT 1 FROM campaigns c
+            WHERE c.center_id = NEW.center_id
+              AND c.date = NEW.date
+              AND c.status <> 'cancelled'
+              AND (NEW.start_time < c.end_time AND NEW.end_time > c.start_time)
+          )
+          THEN RAISE(ABORT, 'Schedule overlap for center/date/time')
+        END;
+      END;
+    `);
+
+    // 2) Evitar superposición (UPDATE de fechas/horarios/centro)
+    db.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_campaigns_no_overlap_upd
+      BEFORE UPDATE OF center_id, date, start_time, end_time ON campaigns
+      FOR EACH ROW
+      BEGIN
+        SELECT CASE
+          WHEN EXISTS (
+            SELECT 1 FROM campaigns c
+            WHERE c.id <> OLD.id
+              AND c.center_id = NEW.center_id
+              AND c.date = NEW.date
+              AND c.status <> 'cancelled'
+              AND (NEW.start_time < c.end_time AND NEW.end_time > c.start_time)
+          )
+          THEN RAISE(ABORT, 'Schedule overlap for center/date/time')
+        END;
+      END;
+    `);
+
+    // 3) Versionado automático antes de UPDATE (auditar cambios)
+    db.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_campaigns_version_upd
+      BEFORE UPDATE ON campaigns
+      FOR EACH ROW
+      BEGIN
+        INSERT INTO campaign_versions (campaign_id, version, data)
+        VALUES (
+          OLD.id,
+          (SELECT COALESCE(MAX(version),0)+1 FROM campaign_versions WHERE campaign_id = OLD.id),
+          json_object(
+            'id', OLD.id,
+            'name', OLD.name,
+            'place', OLD.place,
+            'center_id', OLD.center_id,
+            'date', OLD.date,
+            'start_time', OLD.start_time,
+            'end_time', OLD.end_time,
+            'blood_group', OLD.blood_group,
+            'rh_factor', OLD.rh_factor,
+            'notes', OLD.notes,
+            'capacity', OLD.capacity,
+            'status', OLD.status,
+            'organizer_id', OLD.organizer_id,
+            'created_at', OLD.created_at
+          )
+        );
+      END;
+    `);
+
+    // 4) "Eliminar" → marcar cancelada + versionar + abortar DELETE real
+    db.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_campaigns_soft_delete
+      BEFORE DELETE ON campaigns
+      FOR EACH ROW
+      BEGIN
+        INSERT INTO campaign_versions (campaign_id, version, data)
+        VALUES (
+          OLD.id,
+          (SELECT COALESCE(MAX(version),0)+1 FROM campaign_versions WHERE campaign_id = OLD.id),
+          json_object(
+            'id', OLD.id,
+            'name', OLD.name,
+            'place', OLD.place,
+            'center_id', OLD.center_id,
+            'date', OLD.date,
+            'start_time', OLD.start_time,
+            'end_time', OLD.end_time,
+            'blood_group', OLD.blood_group,
+            'rh_factor', OLD.rh_factor,
+            'notes', OLD.notes,
+            'capacity', OLD.capacity,
+            'status', 'cancelled',
+            'organizer_id', OLD.organizer_id,
+            'created_at', OLD.created_at
+          )
+        );
+        UPDATE campaigns SET status = 'cancelled' WHERE id = OLD.id;
+        SELECT RAISE(IGNORE);
+      END;
+    `);
   });
 }
