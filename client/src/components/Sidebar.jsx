@@ -22,13 +22,14 @@ export default function Sidebar() {
       { to: "/org/campaigns/new", label: "Crear campaña" },  // nuevo
       { to: "/org/communications", label: "Enviar comunicado" },
       { to: "/org/volunteers", label: "Voluntarios" },
+      { to: "/org/proposals", label: "Solicitudes de campañas" },
       { to: "/settings", label: "Configuraciones" },
     ];
   } else if (primaryRole === "Donor") {
     menu = [
       { to: "/dashboard", label: "Inicio" },
       { to: "/campaigns", label: "Campañas" },
-      { to: "/my-enrollments", label: "Mis inscripciones" },
+      { to: "/enroll", label: "Mis inscripciones" },
       { to: "/health", label: "Salud" },
       { to: "/donations", label: "Donaciones" },
       { to: "/volunteer", label: "Voluntariado" },

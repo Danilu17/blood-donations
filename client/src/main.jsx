@@ -20,6 +20,7 @@ import {
   OrgCampaigns,        // <= antes: OrgCampaignsList
   OrgCampaignCreate,
   OrgCampaignEdit,
+  OrgProposals,
   OrgCommunications,
   OrgVolunteers
 } from "./pages/Organizer";
@@ -45,7 +46,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/dashboard" element={<ProtectedRoute roles={["Donor"]}><DonorDashboard /></ProtectedRoute>} />
           <Route path="/campaigns" element={<ProtectedRoute roles={["Donor","Organizer"]}><CampaignList /></ProtectedRoute>} />
           <Route path="/campaigns/:id" element={<ProtectedRoute roles={["Donor","Organizer"]}><CampaignDetail /></ProtectedRoute>} />
-          <Route path="/my-enrollments" element={<ProtectedRoute roles={["Donor"]}><MyEnrollments /></ProtectedRoute>} />
+          <Route path="/enroll" element={<ProtectedRoute roles={["Donor"]}><MyEnrollments /></ProtectedRoute>} />
           <Route path="/health" element={<ProtectedRoute roles={["Donor"]}><Health /></ProtectedRoute>} />
           <Route path="/donations" element={<ProtectedRoute roles={["Donor"]}><Donations /></ProtectedRoute>} />
           <Route path="/volunteer" element={<ProtectedRoute roles={["Donor"]}><Volunteer /></ProtectedRoute>} />
@@ -55,6 +56,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/org/campaigns" element={<ProtectedRoute roles={["Organizer"]}><OrgCampaigns /></ProtectedRoute>} />
           <Route path="/org/campaigns/new" element={<ProtectedRoute roles={["Organizer"]}><OrgCampaignCreate /></ProtectedRoute>} />
           <Route path="/org/campaigns/:id/edit" element={<ProtectedRoute roles={["Organizer"]}><OrgCampaignEdit /></ProtectedRoute>} />
+          <Route path="/org/proposals" element={<ProtectedRoute roles={["Organizer"]}><OrgProposals /></ProtectedRoute>} />
           <Route path="/org/communications" element={<ProtectedRoute roles={["Organizer"]}><OrgCommunications /></ProtectedRoute>} />
           <Route path="/org/volunteers" element={<ProtectedRoute roles={["Organizer"]}><OrgVolunteers /></ProtectedRoute>} />
 

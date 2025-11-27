@@ -86,6 +86,77 @@ export function OrgCampaigns() {
   );
 }
 
+export function OrgProposals() {
+  const [items, setItems] = useState([]);
+  const [status, setStatus] = useState("pending");
+  const load = () => api.get("/beneficiary/proposals", { params: status ? { status } : {} }).then(r => setItems(r.data.data));
+  useEffect(() => { load(); }, [status]);
+
+  const act = async (id, action) => {
+    await api.put(`/beneficiary/proposals/${id}`, { action });
+    load();
+  };
+
+  return (
+    <>
+      <Sidebar />
+      <main className="main">
+        <div className="header">
+          <h2>Solicitudes de campañas</h2>
+          <div className="row" style={{ gap: 8 }}>
+            <select value={status} onChange={e => setStatus(e.target.value)}>
+              <option value="pending">Pendientes</option>
+              <option value="approved">Aprobadas</option>
+              <option value="published">Publicadas</option>
+              <option value="">Todas</option>
+            </select>
+            <Bell />
+          </div>
+        </div>
+        <div className="card">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Beneficiario</th>
+                <th>Centro</th>
+                <th>Fecha</th>
+                <th>Nota</th>
+                <th>Estado</th>
+                <th>Campaña</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(p => (
+                <tr key={p.id}>
+                  <td>{p.beneficiary_name}</td>
+                  <td>{p.center_name}</td>
+                  <td>{p.date} {p.start_time}-{p.end_time}</td>
+                  <td>{p.note}</td>
+                  <td>{p.status}</td>
+                  <td>{p.campaign_name || (p.linked_campaign_id ? `#${p.linked_campaign_id}` : "-")}</td>
+                  <td className="row" style={{ gap: 6, justifyContent: "flex-end" }}>
+                    {p.status === "pending" && (
+                      <>
+                        <button className="ghost" onClick={() => act(p.id, "approve")}>Aprobar</button>
+                        <button className="ghost" onClick={() => act(p.id, "reject")}>Rechazar</button>
+                      </>
+                    )}
+                    {p.status !== "rejected" && (
+                      <button className="badge" onClick={() => act(p.id, "publish")}>Publicar campaña</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {items.length === 0 && <div className="badge">No hay solicitudes para mostrar.</div>}
+        </div>
+      </main>
+    </>
+  );
+}
+
 /* -------- Crear (center_id oculto por defecto=1) -------- */
 export function OrgCampaignCreate() {
   const nav = useNavigate();

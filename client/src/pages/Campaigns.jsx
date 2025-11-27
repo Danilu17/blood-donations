@@ -78,7 +78,7 @@ export function CampaignDetail() {
   const enroll = async () => {
     setMsg("");
     try {
-      await api.post(`/enrollments`, { campaign_id: Number(id) });
+      await api.post(`/enroll/${id}`);
       setMsg("Inscripción confirmada.");
     } catch (e) {
       setMsg(e.response?.data?.error || "Error al inscribirse");

@@ -114,12 +114,19 @@ export function BeneficiaryPropose() {
     center_id: 1, date: "", start_time: "09:00", end_time: "13:00", note: ""
   });
   const [ok, setOk] = useState("");
+  const [proposals, setProposals] = useState([]);
+
+  const loadProposals = () =>
+    api.get("/beneficiary/proposals/mine").then(r => setProposals(r.data.data || []));
+
+  useEffect(() => { loadProposals(); }, []);
 
   const submitProposal = async e => {
     e.preventDefault();
     await api.post("/beneficiary/proposals", prop);
     setOk("Propuesta enviada (Pendiente de validación)");
     setProp(p => ({ ...p, note: "" }));
+    loadProposals();
   };
 
   return (
@@ -141,7 +148,34 @@ export function BeneficiaryPropose() {
           </form>
           {ok && <div className="badge" style={{ marginTop: 10 }}>{ok}</div>}
         </div>
+        <div className="card">
+          <h3>Mis propuestas</h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Centro</th>
+                <th>Nota</th>
+                <th>Estado</th>
+                <th>Campaña</th>
+              </tr>
+            </thead>
+            <tbody>
+              {proposals.map(p => (
+                <tr key={p.id}>
+                  <td>{p.date} {p.start_time}-{p.end_time}</td>
+                  <td>{p.center_name}</td>
+                  <td>{p.note}</td>
+                  <td>{p.status}</td>
+                  <td>{p.campaign_name || (p.linked_campaign_id ? `#${p.linked_campaign_id}` : "-")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {proposals.length === 0 && <div className="badge">Aún no registraste propuestas.</div>}
+        </div>
       </main>
     </>
   );
+
 }

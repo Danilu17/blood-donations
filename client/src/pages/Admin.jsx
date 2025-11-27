@@ -94,9 +94,18 @@ export function AdminUsers() {
 
 export function AdminCampaigns() {
   const [items, setItems] = useState([]);
-  useEffect(() => {
-    api.get("/campaigns").then(r => setItems(r.data.data));
-  }, []);
+  const [enrollments, setEnrollments] = useState({});
+  const [loadingId, setLoadingId] = useState(null);
+
+  const load = () => api.get("/campaigns/history").then(r => setItems(r.data.data));
+  useEffect(() => { load(); }, []);
+
+  const viewEnrollments = async (id) => {
+    setLoadingId(id);
+    const { data } = await api.get(`/campaigns/${id}/enrollments`);
+    setEnrollments((prev) => ({ ...prev, [id]: data.data || [] }));
+    setLoadingId(null);
+  };
   return (
     <>
       <Sidebar />
@@ -112,6 +121,8 @@ export function AdminCampaigns() {
               <th>Fecha</th>
               <th>Centro</th>
               <th>Estado</th>
+              <th>Inscriptos</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -121,10 +132,43 @@ export function AdminCampaigns() {
                 <td>{c.date}</td>
                 <td>{c.center_name}</td>
                 <td>{c.status}</td>
+                <td>{c.enrollment_count}</td>
+                <td>
+                  <button className="ghost" onClick={() => viewEnrollments(c.id)}>
+                    Ver inscriptos
+                  </button>
+                  {loadingId === c.id && <span className="muted" style={{ marginLeft: 6 }}>Cargando…</span>}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {Object.keys(enrollments).map((cid) => (
+          <div key={cid} className="card" style={{ marginTop: 12 }}>
+            <h4>Inscriptos campaña #{cid}</h4>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(enrollments[cid] || []).map((e, idx) => (
+                  <tr key={idx}>
+                    <td>{e.name} {e.surname}</td>
+                    <td>{e.email}</td>
+                    <td>{e.phone}</td>
+                    <td>{e.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(enrollments[cid] || []).length === 0 && <div className="badge">Sin inscriptos.</div>}
+          </div>
+        ))}
       </main>
     </>
   );

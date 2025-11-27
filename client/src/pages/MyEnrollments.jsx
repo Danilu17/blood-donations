@@ -35,6 +35,7 @@ export default function MyEnrollments() {
               <th>Fecha</th>
               <th>Horario</th>
               <th>Estado</th>
+               <th>Estado campaña</th>
               <th></th>
             </tr>
           </thead>
@@ -47,6 +48,7 @@ export default function MyEnrollments() {
                   {i.start_time}-{i.end_time}
                 </td>
                 <td>{i.status}</td>
+                <td>{i.campaign_status}</td>
                 <td>
                   <button className="ghost" onClick={() => cancel(i.campaign_id)}>
                     Cancelar
